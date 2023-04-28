@@ -32,6 +32,7 @@ async fn main() {
     server
         .serve(app.into_make_service())
         .with_graceful_shutdown(async {
+            #[cfg(unix)]
             tokio::select! {
                 _ = signal!(SignalKind::interrupt()) => {
                     info!("Received SIGINT. Shutting down.");
@@ -40,6 +41,8 @@ async fn main() {
                     info!("Received SIGTERM. Shutting down.");
                 },
             }
+            #[cfg(not(unix))]
+            tokio::signal::ctrl_c().await.unwrap()
         })
         .await
         .unwrap();
