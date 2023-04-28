@@ -1,0 +1,15 @@
+[package]
+name = "aaas"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+agg = { git = "https://github.com/NyCodeGHG/agg", rev = "2bebff3032b3319174809f301631e12c693e92b7" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+axum = { version = "0.6", features = ["macros"] }
+bytes = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
