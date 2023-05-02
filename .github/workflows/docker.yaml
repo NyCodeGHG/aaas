@@ -21,7 +21,7 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           name: uwumarie
       - run: |
-          OCI_ARCHIVE=$(nix build .#docker)
+          OCI_ARCHIVE=$(nix build .#docker --print-out-paths --no-link)
           DOCKER_REPOSITORY="docker://ghcr.io/${GITHUB_REPOSITORY,,}"
           skopeo copy --dest-creds="$GITHUB_ACTOR:$GITHUB_TOKEN" "docker-archive:${OCI_ARCHIVE}" "$DOCKER_REPOSITORY"
         env:
