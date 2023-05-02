@@ -1,9 +1,8 @@
 use agg::Config;
 use anyhow::Result;
 use axum::{
-    body::Bytes,
-    http::StatusCode,
-    response::{IntoResponse, Response},
+    body::{Bytes, Full},
+    http::{Response, StatusCode},
     routing::{get, post},
     Router, Server,
 };
@@ -27,7 +26,7 @@ async fn main() {
 }
 
 #[axum::debug_handler]
-async fn render(body: Bytes) -> Result<Response, StatusCode> {
+async fn render(body: Bytes) -> Result<Response<Full<Bytes>>, StatusCode> {
     let gif = tokio::task::spawn_blocking(|| {
         let mut output = Vec::new();
         let input = Cursor::new(body);
@@ -37,7 +36,11 @@ async fn render(body: Bytes) -> Result<Response, StatusCode> {
     .await
     .unwrap()
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Ok((StatusCode::OK, gif).into_response())
+    Ok(Response::builder()
+        .status(200)
+        .header("Content-Type", "image/gif")
+        .body(Full::new(Bytes::from(gif)))
+        .unwrap())
 }
 
 macro_rules! signal {

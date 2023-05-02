@@ -1,3 +1,5 @@
 /target
 *.cast
 *.gif
+.envrc
+.direnv

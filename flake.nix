@@ -48,7 +48,13 @@
           docker = dockerImage;
         };
         devShell = pkgs.mkShell {
-          packages = with pkgs; [ (rustVersion.override { extensions = [ "rust-src" ]; }) ];
+          inputsFrom = [ aaas ];
+          nativeBuildInputs = with pkgs; [
+            cargo
+            rustc
+            cargo-audit
+            cargo-watch
+          ];
           shellHook = ''
             export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
           '';
