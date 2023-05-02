@@ -27,7 +27,7 @@
         dockerImage = pkgs.dockerTools.buildImage {
           name = "aaas";
           tag = "latest";
-          copyToRoot = {
+          copyToRoot = pkgs.buildEnv {
             name = "image-root";
             paths = [ aaas ];
             pathsToLink = [ "/bin" ];
