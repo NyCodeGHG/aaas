@@ -26,8 +26,14 @@
         };
         dockerImage = pkgs.dockerTools.buildImage {
           name = "aaas";
+          tag = "latest";
+          copyToRoot = {
+            name = "image-root";
+            paths = [ aaas ];
+            pathsToLink = [ "/bin" ];
+          };
           config = {
-            Cmd = [ "${aaas}/bin/aaas" ];
+            Cmd = [ "/bin/aaas" ];
           };
           runAsRoot = ''
             mkdir -p /etc/fonts
