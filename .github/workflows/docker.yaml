@@ -5,10 +5,7 @@ on:
       - main
 
 jobs:
-  pre_ci:
-    uses: dtolnay/.github/.github/workflows/pre_ci.yml@master
   build:
-    if: needs.pre_ci.outputs.continue
     runs-on: ubuntu-latest
     permissions:
       contents: read
