@@ -34,6 +34,9 @@
           };
           config = {
             Cmd = [ "/bin/aaas" ];
+            ExposedPorts = {
+              "8080" = { };
+            };
           };
           runAsRoot = ''
             mkdir -p /etc/fonts
