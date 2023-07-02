@@ -5,10 +5,11 @@ use tracing::Level;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
 pub fn configure_telemetry(enable_otlp: bool) -> Result<()> {
-    let fmt_layer = tracing_subscriber::fmt::layer();
-    let filter = EnvFilter::builder()
-        .with_default_directive(Level::INFO.into())
-        .from_env_lossy();
+    let fmt_layer = tracing_subscriber::fmt::layer().with_filter(
+        EnvFilter::builder()
+            .with_default_directive(Level::INFO.into())
+            .from_env_lossy(),
+    );
 
     if enable_otlp {
         let mut exporter = opentelemetry_otlp::new_exporter().tonic().with_env();
@@ -24,18 +25,19 @@ pub fn configure_telemetry(enable_otlp: bool) -> Result<()> {
             .tracing()
             .with_exporter(exporter)
             .install_batch(opentelemetry::runtime::Tokio)?;
-        let telemetry_layer = tracing_opentelemetry::layer().with_tracer(tracer);
+
+        // Disable problematic crates
+        let filter = tracing_subscriber::filter::EnvFilter::new("trace,h2=off,hyper=off");
+        let telemetry_layer = tracing_opentelemetry::layer()
+            .with_tracer(tracer)
+            .with_filter(filter);
         tracing_subscriber::registry()
             .with(fmt_layer)
-            .with(filter)
             .with(telemetry_layer)
             .init();
         tracing::info!(endpoint = config.endpoint, protocol = ?config.protocol, "OpenTelemetry is enabled.");
     } else {
-        tracing_subscriber::registry()
-            .with(fmt_layer)
-            .with(filter)
-            .init();
+        tracing_subscriber::registry().with(fmt_layer).init();
         tracing::warn!("OpenTelemetry is not enabled.");
     };
     Ok(())
