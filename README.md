@@ -9,7 +9,7 @@ Small microservice for rendering Asciicasts to gifs.
 
 ### OpenTelemetry
 
-aaas supports sending traces to a an observability backend via the [OTPL Protocol](https://opentelemetry.io/docs/specs/otlp/).
+aaas supports sending traces to a an observability backend via the [OTLP Protocol](https://opentelemetry.io/docs/specs/otlp/).
 
 | Environment Variable          | Description                                                                                                   |
 |-------------------------------|---------------------------------------------------------------------------------------------------------------|
