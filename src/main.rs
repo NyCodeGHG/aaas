@@ -4,38 +4,67 @@ use axum::{
     body::{Bytes, Full},
     http::{Response, StatusCode},
     routing::{get, post},
-    Router, Server,
+    Json, Router, Server,
 };
-use std::io::Cursor;
+use serde::Serialize;
+use std::{env, io::Cursor};
+#[cfg(unix)]
 use tokio::signal::unix::SignalKind;
-use tracing::info;
+use tower_http::trace::TraceLayer;
+use tracing::{debug_span, info, Instrument};
+
+use crate::telemetry::configure_telemetry;
+
+mod telemetry;
 
 #[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt().init();
+async fn main() -> Result<()> {
+    configure_telemetry(
+        env::var("ENABLE_OTLP")
+            .ok()
+            .and_then(|var| var.parse().ok())
+            .unwrap_or(false),
+    )?;
     let app = Router::new()
         .route("/render", post(render))
-        .route("/", get(|| async { ":3" }));
+        .route("/", get(|| async { ":3" }))
+        .layer(TraceLayer::new_for_http());
     let server = Server::bind(&"0.0.0.0:8080".parse().unwrap());
     info!("Listening on http://localhost:8080");
     server
         .serve(app.into_make_service())
         .with_graceful_shutdown(shutdown_hook())
-        .await
-        .unwrap();
+        .await?;
+    Ok(())
 }
 
 #[axum::debug_handler]
-async fn render(body: Bytes) -> Result<Response<Full<Bytes>>, StatusCode> {
+#[tracing::instrument(skip(body))]
+async fn render(body: Bytes) -> Result<Response<Full<Bytes>>, (StatusCode, Json<ErrorResponse>)> {
     let gif = tokio::task::spawn_blocking(|| {
         let mut output = Vec::new();
         let input = Cursor::new(body);
-        agg::run(input, &mut output, Config::default())?;
+        agg::run(
+            input,
+            &mut output,
+            Config {
+                show_progress_bar: false,
+                ..Default::default()
+            },
+        )?;
         Result::<Vec<u8>>::Ok(output)
     })
+    .instrument(debug_span!("gif"))
     .await
     .unwrap()
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(|error| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse {
+                error: error.to_string(),
+            }),
+        )
+    })?;
     Ok(Response::builder()
         .status(200)
         .header("Content-Type", "image/gif")
@@ -43,6 +72,12 @@ async fn render(body: Bytes) -> Result<Response<Full<Bytes>>, StatusCode> {
         .unwrap())
 }
 
+#[derive(Debug, Serialize)]
+struct ErrorResponse {
+    error: String,
+}
+
+#[allow(unused)]
 macro_rules! signal {
     ($signal:expr) => {
         async {
