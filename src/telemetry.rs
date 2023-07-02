@@ -1,4 +1,5 @@
 use anyhow::Result;
+use opentelemetry::sdk::propagation::TraceContextPropagator;
 use opentelemetry_otlp::{HasExportConfig, Protocol, WithExportConfig};
 use tracing_subscriber::{prelude::*, EnvFilter};
 
@@ -14,6 +15,7 @@ pub fn configure_telemetry(enable_otlp: bool) -> Result<()> {
                 protocol: cfg.protocol,
             }
         };
+        opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
         let tracer = opentelemetry_otlp::new_pipeline()
             .tracing()
             .with_exporter(exporter)
@@ -26,6 +28,7 @@ pub fn configure_telemetry(enable_otlp: bool) -> Result<()> {
         tracing::info!(endpoint = config.endpoint, protocol = ?config.protocol, "OpenTelemetry is enabled.");
     } else {
         tracing_subscriber::registry().with(fmt_layer).init();
+        tracing::warn!("OpenTelemetry is not enabled.");
     };
     Ok(())
 }

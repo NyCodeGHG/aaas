@@ -6,11 +6,11 @@ use axum::{
     routing::{get, post},
     Json, Router, Server,
 };
+use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
 use serde::Serialize;
 use std::{env, io::Cursor};
 #[cfg(unix)]
 use tokio::signal::unix::SignalKind;
-use tower_http::trace::TraceLayer;
 use tracing::{debug_span, info, Instrument};
 
 use crate::telemetry::configure_telemetry;
@@ -27,8 +27,9 @@ async fn main() -> Result<()> {
     )?;
     let app = Router::new()
         .route("/render", post(render))
-        .route("/", get(|| async { ":3" }))
-        .layer(TraceLayer::new_for_http());
+        .route("/", get(index))
+        .layer(OtelInResponseLayer::default())
+        .layer(OtelAxumLayer::default());
     let server = Server::bind(&"0.0.0.0:8080".parse().unwrap());
     info!("Listening on http://localhost:8080");
     server
@@ -36,6 +37,11 @@ async fn main() -> Result<()> {
         .with_graceful_shutdown(shutdown_hook())
         .await?;
     Ok(())
+}
+
+#[tracing::instrument()]
+async fn index() -> &'static str {
+    ":3"
 }
 
 #[axum::debug_handler]
