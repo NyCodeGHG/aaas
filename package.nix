@@ -16,5 +16,10 @@ rustPlatform.buildRustPackage {
     ];
   };
 
-  cargoHash = "sha256-ZMnSii7VbTo5w92gVdNryyASioSth/hYZ+VfOjcPQOI=";
+  cargoLock = {
+    lockFile = ./Cargo.lock;
+    outputHashes = {
+      "agg-1.5.0" = "sha256-bCE59NeITaCwgajgyXgP6jxtV7aPihPaZ/Uzh39Po1k=";
+    };
+  };
 }
