@@ -1,29 +1,18 @@
 {
   description = "Asciinema as a Service";
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    crane = {
-      url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
-  outputs = { self, nixpkgs, flake-utils, rust-overlay, crane }:
+  outputs = { self, nixpkgs, flake-utils, }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlays = [ (import rust-overlay) ];
-        pkgs = import nixpkgs { inherit system overlays; };
-        version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
+        pkgs = import nixpkgs { inherit system; };
         fontsConf = pkgs.makeFontsConf {
           fontDirectories = [ pkgs.jetbrains-mono ];
         };
 
-        craneLib = crane.lib.${system};
-        aaas = craneLib.buildPackage {
-          pname = "aaas";
-          src = craneLib.cleanCargoSource (craneLib.path ./.);
-        };
+        aaas = pkgs.callPackage ./package.nix { };
         dockerImage = pkgs.dockerTools.buildImage {
           name = "aaas";
           tag = "latest";
