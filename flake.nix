@@ -4,8 +4,14 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
-  outputs = { self, nixpkgs, flake-utils, }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = import nixpkgs { inherit system; };
         fontsConf = pkgs.makeFontsConf {
@@ -40,16 +46,14 @@
           docker = dockerImage;
         };
         devShell = pkgs.mkShell {
-          inputsFrom = [ aaas ];
           nativeBuildInputs = with pkgs; [
             cargo
             rustc
             cargo-audit
             cargo-watch
           ];
-          shellHook = ''
-            export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
-          '';
         };
-      });
+        formatter = pkgs.nixfmt-tree;
+      }
+    );
 }
